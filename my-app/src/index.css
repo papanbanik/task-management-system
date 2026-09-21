@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  @apply bg-slate-800 text-slate-100 min-h-screen;
+  font-family: Arial, Helvetica, sans-serif;
+}
