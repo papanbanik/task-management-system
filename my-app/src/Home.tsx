@@ -44,7 +44,10 @@ const PRIORITY_STYLES: Record<Priority, string> = {
 
 const formatDate = (value?: string) =>
   value
-    ? new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+    ? new Date(value).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+      })
     : "";
 
 type CardBodyProps = {
@@ -54,7 +57,12 @@ type CardBodyProps = {
   onStatusChange?: (todo: Todo, status: Status) => void;
 };
 
-const CardBody = ({ todo, handleProps, onDelete, onStatusChange }: CardBodyProps) => (
+const CardBody = ({
+  todo,
+  handleProps,
+  onDelete,
+  onStatusChange,
+}: CardBodyProps) => (
   <div className="bg-white rounded-lg px-4 py-3 mb-3 shadow-sm">
     <div className="flex gap-2">
       {handleProps && (
@@ -69,8 +77,12 @@ const CardBody = ({ todo, handleProps, onDelete, onStatusChange }: CardBodyProps
       )}
 
       <div className="min-w-0 flex-1">
-        <div className="font-semibold text-gray-800 break-words">{todo.title}</div>
-        <div className="text-sm text-gray-500 mt-1 break-words">{todo.description}</div>
+        <div className="font-semibold text-gray-800 break-words">
+          {todo.title}
+        </div>
+        <div className="text-sm text-gray-500 mt-1 break-words">
+          {todo.description}
+        </div>
       </div>
 
       {onDelete && (
@@ -86,7 +98,9 @@ const CardBody = ({ todo, handleProps, onDelete, onStatusChange }: CardBodyProps
     </div>
 
     <div className="flex items-center justify-between gap-2 mt-3">
-      <span className={`text-xs px-2 py-0.5 rounded-full ${PRIORITY_STYLES[todo.priority] || PRIORITY_STYLES.medium}`}>
+      <span
+        className={`text-xs px-2 py-0.5 rounded-full ${PRIORITY_STYLES[todo.priority] || PRIORITY_STYLES.medium}`}
+      >
         {todo.priority || "medium"}
       </span>
 
@@ -98,14 +112,18 @@ const CardBody = ({ todo, handleProps, onDelete, onStatusChange }: CardBodyProps
           className="text-sm border border-gray-300 rounded px-2 py-1 text-gray-700 bg-white cursor-pointer"
         >
           {COLUMNS.map((c) => (
-            <option key={c.key} value={c.key}>{c.label}</option>
+            <option key={c.key} value={c.key}>
+              {c.label}
+            </option>
           ))}
         </select>
       )}
     </div>
 
     {todo.createdAt && (
-      <p className="text-xs text-gray-400 mt-2">Added {formatDate(todo.createdAt)}</p>
+      <p className="text-xs text-gray-400 mt-2">
+        Added {formatDate(todo.createdAt)}
+      </p>
     )}
   </div>
 );
@@ -116,8 +134,14 @@ type DraggableCardProps = {
   onStatusChange?: (todo: Todo, status: Status) => void;
 };
 
-const DraggableCard = ({ todo, onDelete, onStatusChange }: DraggableCardProps) => {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: todo._id });
+const DraggableCard = ({
+  todo,
+  onDelete,
+  onStatusChange,
+}: DraggableCardProps) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: todo._id,
+  });
 
   return (
     <div ref={setNodeRef} className={isDragging ? "opacity-40" : ""}>
@@ -159,7 +183,7 @@ const Home = () => {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
   useEffect(() => {
@@ -191,7 +215,7 @@ const Home = () => {
     const previous = todos;
 
     setTodos((prev) =>
-      prev.map((t) => (t._id === todo._id ? { ...t, status: newStatus } : t))
+      prev.map((t) => (t._id === todo._id ? { ...t, status: newStatus } : t)),
     );
 
     try {
@@ -209,7 +233,7 @@ const Home = () => {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveId(null);
+    setActiveId(null); //set to null
 
     if (!over) return;
 
