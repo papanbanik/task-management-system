@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "./Navbar";
 import axios from "axios";
 import { BsFillTrashFill } from "react-icons/bs";
@@ -12,23 +12,37 @@ import {
   useDraggable,
   useDroppable,
   pointerWithin,
+  type DragStartEvent,
+  type DragEndEvent,
 } from "@dnd-kit/core";
 
-const API = "http://localhost:3001";
+const API = import.meta.env.VITE_API_URL;
 
-const COLUMNS = [
+type Status = "todo" | "in-progress" | "done";
+type Priority = "low" | "medium" | "high";
+
+type Todo = {
+  _id: string;
+  title: string;
+  description: string;
+  status: Status;
+  priority: Priority;
+  createdAt?: string;
+};
+
+const COLUMNS: { key: Status; label: string }[] = [
   { key: "todo", label: "To do" },
   { key: "in-progress", label: "In progress" },
   { key: "done", label: "Done" },
 ];
 
-const PRIORITY_STYLES = {
+const PRIORITY_STYLES: Record<Priority, string> = {
   high: "bg-red-100 text-red-700",
   medium: "bg-amber-100 text-amber-700",
   low: "bg-green-100 text-green-700",
 };
 
-const formatDate = (value) =>
+const formatDate = (value?: string) =>
   value
     ? new Date(value).toLocaleDateString("en-GB", {
         day: "numeric",
@@ -36,8 +50,19 @@ const formatDate = (value) =>
       })
     : "";
 
-// card-এর চেহারা। handleProps থাকলে drag handle দেখায়
-const CardBody = ({ todo, handleProps, onDelete, onStatusChange }) => (
+type CardBodyProps = {
+  todo: Todo;
+  handleProps?: Record<string, unknown>;
+  onDelete?: (id: string) => void;
+  onStatusChange?: (todo: Todo, status: Status) => void;
+};
+
+const CardBody = ({
+  todo,
+  handleProps,
+  onDelete,
+  onStatusChange,
+}: CardBodyProps) => (
   <div className="bg-white rounded-lg px-4 py-3 mb-3 shadow-sm">
     <div className="flex gap-2">
       {handleProps && (
@@ -74,9 +99,7 @@ const CardBody = ({ todo, handleProps, onDelete, onStatusChange }) => (
 
     <div className="flex items-center justify-between gap-2 mt-3">
       <span
-        className={`text-xs px-2 py-0.5 rounded-full ${
-          PRIORITY_STYLES[todo.priority] || PRIORITY_STYLES.medium
-        }`}
+        className={`text-xs px-2 py-0.5 rounded-full ${PRIORITY_STYLES[todo.priority] || PRIORITY_STYLES.medium}`}
       >
         {todo.priority || "medium"}
       </span>
@@ -84,7 +107,7 @@ const CardBody = ({ todo, handleProps, onDelete, onStatusChange }) => (
       {onStatusChange && (
         <select
           value={todo.status || "todo"}
-          onChange={(e) => onStatusChange(todo, e.target.value)}
+          onChange={(e) => onStatusChange(todo, e.target.value as Status)}
           aria-label={`Change status of ${todo.title}`}
           className="text-sm border border-gray-300 rounded px-2 py-1 text-gray-700 bg-white cursor-pointer"
         >
@@ -105,8 +128,17 @@ const CardBody = ({ todo, handleProps, onDelete, onStatusChange }) => (
   </div>
 );
 
-// টানা যায় এমন card
-const DraggableCard = ({ todo, onDelete, onStatusChange }) => {
+type DraggableCardProps = {
+  todo: Todo;
+  onDelete?: (id: string) => void;
+  onStatusChange?: (todo: Todo, status: Status) => void;
+};
+
+const DraggableCard = ({
+  todo,
+  onDelete,
+  onStatusChange,
+}: DraggableCardProps) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: todo._id,
   });
@@ -123,16 +155,19 @@ const DraggableCard = ({ todo, onDelete, onStatusChange }) => {
   );
 };
 
-// card ফেলার জায়গা (column)
-const Column = ({ col, count, children }) => {
+type ColumnProps = {
+  col: { key: Status; label: string };
+  count: number;
+  children: React.ReactNode;
+};
+
+const Column = ({ col, count, children }: ColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({ id: col.key });
 
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-lg p-2 min-h-[160px] transition-colors ${
-        isOver ? "bg-slate-700/60" : ""
-      }`}
+      className={`rounded-lg p-2 min-h-[160px] transition-colors ${isOver ? "bg-slate-700/60" : ""}`}
     >
       <div className="flex justify-between mb-3 px-1 text-white font-semibold">
         <h3>{col.label}</h3>
@@ -144,10 +179,9 @@ const Column = ({ col, count, children }) => {
 };
 
 const Home = () => {
-  const [todos, setTodos] = useState([]);
-  const [activeId, setActiveId] = useState(null);
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
-  // ৫px না টানলে drag শুরু হয় না, তাই সাধারণ click নষ্ট হয় না
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
@@ -155,7 +189,7 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const result = await axios.get(`${API}/get`);
+        const result = await axios.get<Todo[]>(`${API}/get`);
         setTodos(result.data);
       } catch (err) {
         console.log(err);
@@ -165,7 +199,7 @@ const Home = () => {
     fetchData();
   }, []);
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
     const confirmDelete = window.confirm("Are you sure you want to delete?");
     if (!confirmDelete) return;
 
@@ -177,10 +211,9 @@ const Home = () => {
     }
   };
 
-  const handleStatusChange = async (todo, newStatus) => {
+  const handleStatusChange = async (todo: Todo, newStatus: Status) => {
     const previous = todos;
 
-    // আগে screen বদলাও, যাতে card সাথে সাথে সরে যায়
     setTodos((prev) =>
       prev.map((t) => (t._id === todo._id ? { ...t, status: newStatus } : t)),
     );
@@ -189,23 +222,25 @@ const Home = () => {
       await axios.put(`${API}/update/${todo._id}`, { status: newStatus });
     } catch (err) {
       console.log(err);
-      setTodos(previous); // save না হলে আগের অবস্থায় ফিরিয়ে দাও
+      setTodos(previous);
       alert("Couldn't move the task. Try again.");
     }
   };
 
-  const handleDragStart = (event) => setActiveId(event.active.id);
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(String(event.active.id));
+  };
 
-  const handleDragEnd = (event) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveId(null);
+    setActiveId(null); //set to null
 
-    if (!over) return; // কোনো column-এর বাইরে ফেললে কিছু হবে না
+    if (!over) return;
 
     const todo = todos.find((t) => t._id === active.id);
     if (!todo) return;
 
-    const newStatus = over.id;
+    const newStatus = over.id as Status;
     if ((todo.status || "todo") !== newStatus) {
       handleStatusChange(todo, newStatus);
     }
