@@ -3,7 +3,7 @@ import Navbar from "../Navbar";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://localhost:3001";
+const API = import.meta.env.VITE_API_URL;
 
 const Page = () => {
   const navigate = useNavigate();
@@ -43,9 +43,6 @@ const Page = () => {
     }
   };
 
-  const inputClass =
-    "w-full border border-gray-300 rounded-lg py-2 px-3 text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-[#FFCE12]";
-
   return (
     <div>
       <Navbar />
@@ -75,7 +72,7 @@ const Page = () => {
                 setError("");
               }}
               placeholder="Write API docs"
-              className={inputClass}
+              className="field-input"
             />
           </div>
 
@@ -95,7 +92,7 @@ const Page = () => {
               }}
               placeholder="Document all routes"
               rows={3}
-              className={inputClass}
+              className="field-input"
             />
           </div>
 
@@ -111,7 +108,7 @@ const Page = () => {
                 id="priority"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
-                className={inputClass}
+                className="field-input"
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -130,7 +127,7 @@ const Page = () => {
                 id="status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className={inputClass}
+                className="field-input"
               >
                 <option value="todo">To do</option>
                 <option value="in-progress">In progress</option>
